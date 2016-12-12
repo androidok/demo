@@ -1,14 +1,11 @@
+android 开放用到的模拟器
 夜深模拟器
 genymotion
-
-sqlite expert
-
-Sqlyog
-
-MarkDown
-
-zoomIt64
-
+android 开发的时候用于对数据库操作的软件
+sqlite expert   查看数据中的内容
+Sqlyog     对数据库进行操作，执行sql语句
+MarkDown   记录笔记用到的软件，
+zoomIt64    屏幕缩放 软件
 feedback
-Listary
-open explorer  
+Listary   快速搜索电脑文件的软件
+OpenExplorer  在eclipse中快速打开文件目录  
