@@ -1,1 +1,83 @@
+# NDK 集成开发环境的使用步骤：
 
+	*一、 预备工作：
+		* eclipse ： windows - prefences- android - ndk 设置 ndk 解压路径
+** 二: 根据需求声明 native 方法 
+		/**
+		 * 声明 native 方法，
+		 * @return
+		 */
+public native int pay(String username,String pwd,int money);
+三： 添加 ndk 开发环境
+		* 1- 项目 -右键 - android tools – Add Native  Support（添加本地支持），写入模块名，确定。
+      * 把 .cpp 改为 .c 同时修改 Android.mk 文件中的 .cpp 改为 .c
+      2- 使用 javah 命令获得 native 方法 对应的C函数声明,复制到 c 文件中
+打开android项目的bin 目录，再打开classes文件夹， 在classes文件夹中打开命令行窗口（shift+鼠标右键），复制调用c函数的java代码的类的全限定名
+执行javah zz.itcast.loginz19.MainActivity会生成zz_itcast_loginz19_MainActivity.h文件，其中文件中有如下内容
+JNIEXPORT jint JNICALL Java_zz_itcast_payz19_MainActivity_pay
+  (JNIEnv *, jobject , jstring , jstring , jint ){
+}
+)这就是函数的声明。
+  在c函数中声明，其中JNIEXPORT和JNICALL可以省略
+   jint Java_zz_itcast_payz19_MainActivity_pay
+  (JNIEnv *env, jobject obj, jstring jusername, jstring jpassword, jint money){
+}
+
+  四*  关联 C 源码，即添加路径。
+* 项目-右键-properties- C/C++ General – Paths and Symbols -- Add 添加，将jni.h所在的路径添加进去
+
+  4- 如果需要支持x86 的cpu 需要添加 Application.mk 文件 
+添加APP_ABI := all ，意思是编译成所有版本的so文件
+五：实现C代码中所需要的功能，同时返回 java所需要的数据类型
+ jint Java_zz_itcast_payz19_MainActivity_pay
+  (JNIEnv *env, jobject obj, jstring jusername, jstring jpassword, jint money){
+
+
+
+	 CallJavaSetProgressMessage(env,obj,"对密码加密");
+	 // 对密码加密
+	 sleep(2); //  休眠2秒
+	 LOGD("对密码加密");
+
+	 CallJavaSetProgressMessage(env,obj,"联网支付");
+	 // 联网支付
+	 sleep(2); //  休眠2秒
+	 LOGD("联网支付");
+
+	 CallJavaSetProgressMessage(env,obj,"检查支付结果");
+	 // 检查支付结果
+	 sleep(2); //  休眠2秒
+	 LOGD("检查支付结果");
+
+
+
+	 // 获得用户名，密码
+	 char * username = Jstring2CStr(env,jusername);
+	 char * password = Jstring2CStr(env,jpassword);
+
+	 // 假设 用户名 abc    密码 abc123       金额最高 500
+	 int userNameResult = strcmp(username,"abc");
+	 int pwdResult = strcmp(password,"abc123");
+
+	 if(userNameResult == 0 && pwdResult == 0){
+		 // 用户名密码正确
+
+		 if(money > 500 ){
+			 	return -2;
+		 }else{
+			 return 1;
+		 }
+	 }else{
+		 // 用户名密码不正确
+		 return -1;
+	 }
+
+
+六：在java代码中加载 so 库
+static{
+		System.loadLibrary("pay");
+	}
+
+  七：运行程序到安卓手机上面。
+  
+  
