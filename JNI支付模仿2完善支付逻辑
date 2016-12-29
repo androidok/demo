@@ -1,0 +1,321 @@
+# NDK 集成开发环境的使用步骤：
+
+	*一、 预备工作：
+		* eclipse ： windows - prefences- android - ndk 设置 ndk 解压路径
+** 二: 根据需求声明 native 方法 
+		/**
+		 * 声明 native 方法，
+		 * @return
+		 */
+public native int pay(String username,String pwd,int money);
+三： 添加 ndk 开发环境
+		* 1- 项目 -右键 - android tools – Add Native  Support（添加本地支持），写入模块名，确定。
+      * 把 .cpp 改为 .c 同时修改 Android.mk 文件中的 .cpp 改为 .c
+      2- 使用 javah 命令获得 native 方法 对应的C函数声明,复制到 c 文件中
+打开android项目的bin 目录，再打开classes文件夹， 在classes文件夹中打开命令行窗口（shift+鼠标右键），复制调用c函数的java代码的类的全限定名
+执行javah zz.itcast.loginz19.MainActivity会生成zz_itcast_loginz19_MainActivity.h文件，其中文件中有如下内容
+JNIEXPORT jint JNICALL Java_zz_itcast_payz19_MainActivity_pay
+  (JNIEnv *, jobject , jstring , jstring , jint ){
+}
+)这就是函数的声明。
+  在c函数中声明，其中JNIEXPORT和JNICALL可以省略
+   jint Java_zz_itcast_payz19_MainActivity_pay
+  (JNIEnv *env, jobject obj, jstring jusername, jstring jpassword, jint money){
+}
+
+  四*  关联 C 源码，即添加路径。
+* 项目-右键-properties- C/C++ General – Paths and Symbols -- Add 添加，将jni.h所在的路径添加进去
+
+  4- 如果需要支持x86 的cpu 需要添加 Application.mk 文件 
+添加APP_ABI := all ，意思是编译成所有版本的so文件
+五：实现C代码中所需要的功能，同时返回 java所需要的数据类型
+ jint Java_zz_itcast_payz19_MainActivity_pay
+  (JNIEnv *env, jobject obj, jstring jusername, jstring jpassword, jint money){
+
+
+
+	 CallJavaSetProgressMessage(env,obj,"对密码加密");
+	 // 对密码加密
+	 sleep(2); //  休眠2秒
+	 LOGD("对密码加密");
+
+	 CallJavaSetProgressMessage(env,obj,"联网支付");
+	 // 联网支付
+	 sleep(2); //  休眠2秒
+	 LOGD("联网支付");
+
+	 CallJavaSetProgressMessage(env,obj,"检查支付结果");
+	 // 检查支付结果
+	 sleep(2); //  休眠2秒
+	 LOGD("检查支付结果");
+
+
+
+	 // 获得用户名，密码
+	 char * username = Jstring2CStr(env,jusername);
+	 char * password = Jstring2CStr(env,jpassword);
+
+	 // 假设 用户名 abc    密码 abc123       金额最高 500
+	 int userNameResult = strcmp(username,"abc");
+	 int pwdResult = strcmp(password,"abc123");
+
+	 if(userNameResult == 0 && pwdResult == 0){
+		 // 用户名密码正确
+
+		 if(money > 500 ){
+			 	return -2;
+		 }else{
+			 return 1;
+		 }
+	 }else{
+		 // 用户名密码不正确
+		 return -1;
+	 }
+
+
+六：在java代码中加载 so 库
+static{
+		System.loadLibrary("pay");
+	}
+
+  七：运行程序到安卓手机上面。
+  
+  
+  
+  MainActivity.java
+package zz.itcast.payz19;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.os.Bundle;
+import android.os.Handler;
+import android.text.TextUtils;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.Toast;
+
+public class MainActivity extends Activity {
+
+	private EditText etUsername;
+	private EditText etPassword;
+	private EditText etMoney;
+	protected Context ctx;	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		ctx = this;
+		
+		etUsername = (EditText) findViewById(R.id.et_username);
+		etPassword = (EditText) findViewById(R.id.et_pwd);
+		etMoney = (EditText) findViewById(R.id.et_money);
+		
+	}
+
+	
+	public void btnPay(View v){
+		
+		
+				
+				String username = etUsername.getText().toString().trim();
+				String password = etPassword.getText().toString().trim();
+				String moneyStr = etMoney.getText().toString().trim();
+				
+				int money = Integer.parseInt(moneyStr);
+				
+				if(TextUtils.isEmpty(username)
+						|| TextUtils.isEmpty(password)
+						|| TextUtils.isEmpty(moneyStr)){
+					
+//					Toast.makeText(ctx, "用户名，密码，金额都不能为空", 0).show();
+					showToast("用户名，密码，金额都不能为空");
+					return ;
+				}
+					
+     int result = pay(username,password,money);		
+     switch (result) {
+			case 1:
+				Toast.makeText(ctx, "支付成功！", 0).show();
+				break;
+			case -1:
+				Toast.makeText(ctx, "支付失败 ，用户名密码不正确！", 0).show();
+				break;
+			case -2:
+				Toast.makeText(ctx, "支付失败 ，金额不足！", 0).show();
+				break;
+			}
+     
+}
+	
+	
+	/**
+	 *  由C代码实现支付的逻辑
+	 * @param username 用户名
+	 * @param pwd 密码
+	 * @param money 支付金额 
+	 * @return
+	 * 	 1 支付成功
+	 * 	-1 支付失败 ，用户名密码不正确
+	 *  -2支付失败 ,金额不足
+	 * 
+	 */
+	public native int pay(String username,String pwd,int money);
+	
+	
+	static{
+		System.loadLibrary("pay");
+	}
+
+}
+
+.c文件
+
+#include <jni.h>
+#include <string.h>
+
+#include <stdlib.h>
+#include <android/log.h>
+#define LOG_TAG "System.out"
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+
+// LOGI("info\n");
+// LOGD("debug\n");
+
+
+/**
+ * 将 java 中的字符串 转换为 C 语言中的字符串
+ *
+ * 原理就是
+ * 	1- 用反射的方法  调用   jstr.getBytes("GB2312"); 方法 ，获得 byte[]
+ * 	2- 根据获得的  byte[]  创建 一个C 语言中的字符串
+ */
+char*   Jstring2CStr(JNIEnv*   env,   jstring   jstr)
+{
+	 char*   rtn   =   NULL;
+	 // 获得 java.lang.String 的字节码
+	 jclass   clsstring   =   (*env)->FindClass(env,"java/lang/String");
+
+	 // 获得 java 中的字符串  GB2312
+	 jstring   strencode   =   (*env)->NewStringUTF(env,"GB2312");
+
+	 // 获得方法 ID 即获得 String 类中    byte [] getBytes(String str); 方法
+	 jmethodID   mid   =   (*env)->GetMethodID(env,clsstring,   "getBytes",   "(Ljava/lang/String;)[B");
+
+	 // 调用方法
+	 jbyteArray   barr=   (jbyteArray)(*env)->CallObjectMethod(env,jstr,mid,strencode); // String .getByte("GB2312");
+
+	 //----------------
+	 // 获得数组的长度
+	 jsize   alen   =   (*env)->GetArrayLength(env,barr);
+	 // 获得字节数组中所有的元素
+	 jbyte*   ba   =   (*env)->GetByteArrayElements(env,barr,JNI_FALSE);
+
+	 if(alen   >   0) // 判断字符串长度是否大于0
+	 {
+	  rtn   =   (char*)malloc(alen+1); // 申请一个比java中字符串长度大1的内存空间，因为最后一个字节要写入字符 '\0'        //"\0"
+	  memcpy(rtn,ba,alen); // 内存copy
+	  rtn[alen]=0;
+	 }
+	 (*env)->ReleaseByteArrayElements(env,barr,ba,0);  // 释放 不需要的内存
+	 return rtn;
+}
+
+
+
+ * 支付
+ * 参数:
+ *  jobject obj 调用当前C 函数的 java 对象
+ * 	jstring jusername 用户名
+ * 	jstring jpassword 密码
+ *  jint money	金额
+ *
+ * 返回：
+ 	 * 	1 支付成功
+	 * 	-1 支付失败 ，用户名密码不正确
+	 *  -2支付失败 ,金额不足
+ */
+ jint Java_zz_itcast_payz19_MainActivity_pay
+  (JNIEnv *env, jobject obj, jstring jusername, jstring jpassword, jint money){
+  
+  
+	 CallJavaSetProgressMessage(env,obj,"对密码加密");
+	 // 对密码加密，为了账户的安全性，需要对密码加密
+ sleep(2); //  休眠2秒，由于加密需要时间，所以在这里只是模仿加密消耗的时间	
+   
+   LOGD("对密码加密");
+
+	 CallJavaSetProgressMessage(env,obj,"联网支付");
+	 // 联网支付，需要从服务器数据库中获取内容，所以消耗时间，在这里模拟
+ sleep(2); //  休眠2秒
+	 LOGD("联网支付");
+
+	 CallJavaSetProgressMessage(env,obj,"检查支付结果");
+	 // 检查支付结果
+	 sleep(2); //  休眠2秒
+	 LOGD("检查支付结果");
+  
+  
+  
+	 // 获得用户名，密码
+	 char * username = Jstring2CStr(env,jusername);
+	 char * password = Jstring2CStr(env,jpassword);
+
+	 // 假设 用户名 abc    密码 abc123       金额最高 500
+	 int userNameResult = strcmp(username,"abc");//通过查询c函数速查.chm文件查找c语言中两个字符串是否相等的方法，相等返回0，
+	 //不相等返回相差值的大小	
+  	  int pwdResult = strcmp(password,"abc123");
+	
+	 if(userNameResult == 0 && pwdResult == 0){
+		 // 用户名密码正确
+
+		 if(money > 500 ){
+			 	return -2;
+		 }else{
+			 return 1;
+		 }
+	 }else{
+		 // 用户名密码不正确
+		 return -1;
+	 }
+
+
+};
+//这样代码中的核心代码就放在了c代码中了。安全行就提高了。
+.xml文件
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/et_username"
+        android:hint="输入用户名" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/et_pwd"
+        android:inputType="textPassword"
+        android:hint="输入用密码" />
+    
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/et_money"
+        android:inputType="number"
+        android:hint="输入用金额" />
+    
+    <Button 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="支付"
+        android:onClick="btnPay"
+        />
+    
+</LinearLayout>
