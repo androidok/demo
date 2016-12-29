@@ -20,8 +20,8 @@ JNIEXPORT jstring JNICALL Java_zz_itcast_loginz19_MainActivity_encryptPwdFormC
   在c函数中声明，其中JNIEXPORT和JNICALL可以省略
   jstring Java_zz_itcast_loginz19_MainActivity_encryptPwdFormC
   (JNIEnv * env, jobject obj, jstring jstr,jint pwdLen){}
-  四*  关联 C 源码。
-				* 项目-右键-properties- C/C++ General – Paths and Symbols -- Add 添加，将jni.h所在的路径添加进去
+  四*  关联 C 源码，即添加路径。
+* 项目-右键-properties- C/C++ General – Paths and Symbols -- Add 添加，将jni.h所在的路径添加进去
 
   4- 如果需要支持x86 的cpu 需要添加 Application.mk 文件 
 添加APP_ABI := all ，意思是编译成所有版本的so文件
