@@ -164,7 +164,8 @@ char*   Jstring2CStr(JNIEnv*   env,   jstring   jstr)
   (JNIEnv * env, jobject obj, jstring jstr,jint pwdLen){
 
 	 // 一：获得java 代码传递来的密码明文
-	 // 将 jstring 类型 转换为 c 语言中的字符串类型
+	 //从java传递过来的数据不能直接使用，要转换为c语言中的字符串的形式
+ // 将 jstring 类型 转换为 c 语言中的字符串类型
 	 char * password = Jstring2CStr(env,jstr);
 
 	 // 二 ： 用C 代码进行加密
@@ -179,8 +180,8 @@ char*   Jstring2CStr(JNIEnv*   env,   jstring   jstr)
 	 }
 
 
-	 // 三：将改变后的 password 返回到java代码中
-	 jstring jpwd = (*env)->NewStringUTF(env,password);
+	 // 三：将改变后的 password 返回到java代码中，通过查询jni.h找到一个返回值为jString的函数	
+ jstring jpwd = (*env)->NewStringUTF(env,password);
 
 	 return jpwd;
 };
