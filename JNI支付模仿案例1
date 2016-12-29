@@ -81,3 +81,253 @@ static{
   七：运行程序到安卓手机上面。
   
   
+  
+  MainActivity.java
+package zz.itcast.payz19;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.os.Bundle;
+import android.os.Handler;
+import android.text.TextUtils;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.Toast;
+
+public class MainActivity extends Activity {
+
+	private EditText etUsername;
+	private EditText etPassword;
+	private EditText etMoney;
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		ctx = this;
+		
+		etUsername = (EditText) findViewById(R.id.et_username);
+		etPassword = (EditText) findViewById(R.id.et_pwd);
+		etMoney = (EditText) findViewById(R.id.et_money);
+		
+	}
+
+	
+	public void btnPay(View v){
+		
+		
+				
+				String username = etUsername.getText().toString().trim();
+				String password = etPassword.getText().toString().trim();
+				String moneyStr = etMoney.getText().toString().trim();
+				
+				int money = Integer.parseInt(moneyStr);
+				
+				if(TextUtils.isEmpty(username)
+						|| TextUtils.isEmpty(password)
+						|| TextUtils.isEmpty(moneyStr)){
+					
+//					Toast.makeText(ctx, "用户名，密码，金额都不能为空", 0).show();
+					showToast("用户名，密码，金额都不能为空");
+					return ;
+				}
+					
+								
+}
+	
+	
+	/**
+	 *  由C代码实现支付的逻辑
+	 * @param username 用户名
+	 * @param pwd 密码
+	 * @param money 支付金额 
+	 * @return
+	 * 	 1 支付成功
+	 * 	-1 支付失败 ，用户名密码不正确
+	 *  -2支付失败 ,金额不足
+	 * 
+	 */
+	public native int pay(String username,String pwd,int money);
+	
+	
+	static{
+		System.loadLibrary("pay");
+	}
+
+}
+
+.c文件
+
+#include <jni.h>
+#include <string.h>
+
+#include <stdlib.h>
+#include <android/log.h>
+#define LOG_TAG "System.out"
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+
+// LOGI("info\n");
+// LOGD("debug\n");
+
+
+/**
+ * 将 java 中的字符串 转换为 C 语言中的字符串
+ *
+ * 原理就是
+ * 	1- 用反射的方法  调用   jstr.getBytes("GB2312"); 方法 ，获得 byte[]
+ * 	2- 根据获得的  byte[]  创建 一个C 语言中的字符串
+ */
+char*   Jstring2CStr(JNIEnv*   env,   jstring   jstr)
+{
+	 char*   rtn   =   NULL;
+	 // 获得 java.lang.String 的字节码
+	 jclass   clsstring   =   (*env)->FindClass(env,"java/lang/String");
+
+	 // 获得 java 中的字符串  GB2312
+	 jstring   strencode   =   (*env)->NewStringUTF(env,"GB2312");
+
+	 // 获得方法 ID 即获得 String 类中    byte [] getBytes(String str); 方法
+	 jmethodID   mid   =   (*env)->GetMethodID(env,clsstring,   "getBytes",   "(Ljava/lang/String;)[B");
+
+	 // 调用方法
+	 jbyteArray   barr=   (jbyteArray)(*env)->CallObjectMethod(env,jstr,mid,strencode); // String .getByte("GB2312");
+
+	 //----------------
+	 // 获得数组的长度
+	 jsize   alen   =   (*env)->GetArrayLength(env,barr);
+	 // 获得字节数组中所有的元素
+	 jbyte*   ba   =   (*env)->GetByteArrayElements(env,barr,JNI_FALSE);
+
+	 if(alen   >   0) // 判断字符串长度是否大于0
+	 {
+	  rtn   =   (char*)malloc(alen+1); // 申请一个比java中字符串长度大1的内存空间，因为最后一个字节要写入字符 '\0'        //"\0"
+	  memcpy(rtn,ba,alen); // 内存copy
+	  rtn[alen]=0;
+	 }
+	 (*env)->ReleaseByteArrayElements(env,barr,ba,0);  // 释放 不需要的内存
+	 return rtn;
+}
+
+
+/**
+ * 调用 MainAcivity 中的 setProgressMsg 方法 ，设置进度框的文字
+ * 参数：
+ * 	char * msg 要显示的字符串
+ */
+void CallJavaSetProgressMessage(JNIEnv *env, jobject obj,char * msg){
+	 // 一： 获得字节码
+		 // jclass      (*GetObjectClass)(JNIEnv*, jobject);
+		 jclass clazz = (*env)->GetObjectClass(env,obj);
+
+		 // 二： 获得方法
+		 // jmethodID   (*GetMethodID)(JNIEnv*, jclass, const char*, const char*);
+		 // 参数三是要获得的方法的名称，参数四是 要获得的方法 的签名
+		 jmethodID methodId = (*env)->GetMethodID(env,clazz,"setProgressMsg","(Ljava/lang/String;)V");
+
+		 // 三： 调用方法
+		 //  void        (*CallVoidMethod)(JNIEnv*, jobject, jmethodID, ...);
+
+		 jstring jmessage = (*env)->NewStringUTF(env,msg);
+		 (*env)->CallVoidMethod(env,obj,methodId,jmessage);
+
+
+
+}
+
+/**
+ * 支付
+ * 参数:
+ *  jobject obj 调用当前C 函数的 java 对象
+ * 	jstring jusername 用户名
+ * 	jstring jpassword 密码
+ *  jint money	金额
+ *
+ * 返回：
+ 	 * 	1 支付成功
+	 * 	-1 支付失败 ，用户名密码不正确
+	 *  -2支付失败 ,金额不足
+ */
+ jint Java_zz_itcast_payz19_MainActivity_pay
+  (JNIEnv *env, jobject obj, jstring jusername, jstring jpassword, jint money){
+
+
+
+	 CallJavaSetProgressMessage(env,obj,"对密码加密");
+	 // 对密码加密
+	 sleep(2); //  休眠2秒
+	 LOGD("对密码加密");
+
+	 CallJavaSetProgressMessage(env,obj,"联网支付");
+	 // 联网支付
+	 sleep(2); //  休眠2秒
+	 LOGD("联网支付");
+
+	 CallJavaSetProgressMessage(env,obj,"检查支付结果");
+	 // 检查支付结果
+	 sleep(2); //  休眠2秒
+	 LOGD("检查支付结果");
+
+
+
+	 // 获得用户名，密码
+	 char * username = Jstring2CStr(env,jusername);
+	 char * password = Jstring2CStr(env,jpassword);
+
+	 // 假设 用户名 abc    密码 abc123       金额最高 500
+	 int userNameResult = strcmp(username,"abc");
+	 int pwdResult = strcmp(password,"abc123");
+
+	 if(userNameResult == 0 && pwdResult == 0){
+		 // 用户名密码正确
+
+		 if(money > 500 ){
+			 	return -2;
+		 }else{
+			 return 1;
+		 }
+	 }else{
+		 // 用户名密码不正确
+		 return -1;
+	 }
+
+
+};
+
+.xml文件
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/et_username"
+        android:hint="输入用户名" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/et_pwd"
+        android:inputType="textPassword"
+        android:hint="输入用密码" />
+    
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/et_money"
+        android:inputType="number"
+        android:hint="输入用金额" />
+    
+    <Button 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="支付"
+        android:onClick="btnPay"
+        />
+    
+</LinearLayout>
