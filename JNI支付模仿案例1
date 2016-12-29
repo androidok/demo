@@ -100,7 +100,7 @@ public class MainActivity extends Activity {
 	private EditText etUsername;
 	private EditText etPassword;
 	private EditText etMoney;
-	
+	protected Context ctx;	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -133,7 +133,19 @@ public class MainActivity extends Activity {
 					return ;
 				}
 					
-     int result = pay(username,password,money);			
+     int result = pay(username,password,money);		
+     switch (result) {
+			case 1:
+				Toast.makeText(ctx, "支付成功！", 0).show();
+				break;
+			case -1:
+				Toast.makeText(ctx, "支付失败 ，用户名密码不正确！", 0).show();
+				break;
+			case -2:
+				Toast.makeText(ctx, "支付失败 ，金额不足！", 0).show();
+				break;
+			}
+     
 }
 	
 	
@@ -211,32 +223,7 @@ char*   Jstring2CStr(JNIEnv*   env,   jstring   jstr)
 }
 
 
-/**
- * 调用 MainAcivity 中的 setProgressMsg 方法 ，设置进度框的文字
- * 参数：
- * 	char * msg 要显示的字符串
- */
-void CallJavaSetProgressMessage(JNIEnv *env, jobject obj,char * msg){
-	 // 一： 获得字节码
-		 // jclass      (*GetObjectClass)(JNIEnv*, jobject);
-		 jclass clazz = (*env)->GetObjectClass(env,obj);
 
-		 // 二： 获得方法
-		 // jmethodID   (*GetMethodID)(JNIEnv*, jclass, const char*, const char*);
-		 // 参数三是要获得的方法的名称，参数四是 要获得的方法 的签名
-		 jmethodID methodId = (*env)->GetMethodID(env,clazz,"setProgressMsg","(Ljava/lang/String;)V");
-
-		 // 三： 调用方法
-		 //  void        (*CallVoidMethod)(JNIEnv*, jobject, jmethodID, ...);
-
-		 jstring jmessage = (*env)->NewStringUTF(env,msg);
-		 (*env)->CallVoidMethod(env,obj,methodId,jmessage);
-
-
-
-}
-
-/**
  * 支付
  * 参数:
  *  jobject obj 调用当前C 函数的 java 对象
@@ -251,34 +238,15 @@ void CallJavaSetProgressMessage(JNIEnv *env, jobject obj,char * msg){
  */
  jint Java_zz_itcast_payz19_MainActivity_pay
   (JNIEnv *env, jobject obj, jstring jusername, jstring jpassword, jint money){
-
-
-
-	 CallJavaSetProgressMessage(env,obj,"对密码加密");
-	 // 对密码加密
-	 sleep(2); //  休眠2秒
-	 LOGD("对密码加密");
-
-	 CallJavaSetProgressMessage(env,obj,"联网支付");
-	 // 联网支付
-	 sleep(2); //  休眠2秒
-	 LOGD("联网支付");
-
-	 CallJavaSetProgressMessage(env,obj,"检查支付结果");
-	 // 检查支付结果
-	 sleep(2); //  休眠2秒
-	 LOGD("检查支付结果");
-
-
-
 	 // 获得用户名，密码
 	 char * username = Jstring2CStr(env,jusername);
 	 char * password = Jstring2CStr(env,jpassword);
 
 	 // 假设 用户名 abc    密码 abc123       金额最高 500
-	 int userNameResult = strcmp(username,"abc");
-	 int pwdResult = strcmp(password,"abc123");
-
+	 int userNameResult = strcmp(username,"abc");//通过查询c函数速查.chm文件查找c语言中两个字符串是否相等的方法，相等返回0，
+	 //不相等返回相差值的大小	
+  	  int pwdResult = strcmp(password,"abc123");
+	
 	 if(userNameResult == 0 && pwdResult == 0){
 		 // 用户名密码正确
 
@@ -294,7 +262,7 @@ void CallJavaSetProgressMessage(JNIEnv *env, jobject obj,char * msg){
 
 
 };
-
+//这样代码中的核心代码就放在了c代码中了。安全行就提高了。
 .xml文件
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
