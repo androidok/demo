@@ -15,3 +15,4 @@ android studio(as)   eclipse（其中的eclipse有很多的版本）开发软件
 开发的时候我们使用的eclipse是ADT版本的eclipse，其中的adt就是eclipse的插件，最新的版本是23.0.7，以后就不再更新了。
 注意在开发的时候用快捷键的时候as就是as的，eclipse 就使用eclipse的，因为快捷键可以修改，有的开发人员就把as的快捷键修改成eclipse的
 使用，我建议不要修改，as的快捷键的性能本来就高，你非要修改成其它的快捷键，这样就把as的快发性能拉低了。
+Java Decompiler   对jar进行反编译的工具
