@@ -1,0 +1,186 @@
+# NDK 集成开发环境的使用步骤：
+
+	*一、 预备工作：
+		* eclipse ： windows - prefences- android - ndk 设置 ndk 解压路径
+** 二: 根据需求声明 native 方法 
+		/**
+		 * 声明 native 方法，
+		 * @return
+		 */
+
+public native String encryptPwdFormC(String pwd,int pwdLen);
+三： 添加 ndk 开发环境
+		* 1- 项目 -右键 - android tools – Add Native  Support（添加本地支持），写入模块名，确定。
+      * 把 .cpp 改为 .c 同时修改 Android.mk 文件中的 .cpp 改为 .c
+      2- 使用 javah 命令获得 native 方法 对应的C函数声明,复制到 c 文件中
+打开android项目的bin 目录，再打开classes文件夹， 在classes文件夹中打开命令行窗口（shift+鼠标右键），复制调用c函数的java代码的类的全限定名
+执行javah zz.itcast.loginz19.MainActivity会生成zz_itcast_loginz19_MainActivity.h文件，其中文件中有如下内容
+JNIEXPORT jstring JNICALL Java_zz_itcast_loginz19_MainActivity_encryptPwdFormC
+  (JNIEnv * , jobject , jstring ,jint)这就是函数的声明。
+  在c函数中声明，其中JNIEXPORT和JNICALL可以省略
+  jstring Java_zz_itcast_loginz19_MainActivity_encryptPwdFormC
+  (JNIEnv * env, jobject obj, jstring jstr,jint pwdLen){}
+  四*  关联 C 源码。
+				* 项目-右键-properties- C/C++ General – Paths and Symbols -- Add 添加，将jni.h所在的路径添加进去
+
+  4- 如果需要支持x86 的cpu 需要添加 Application.mk 文件 
+添加APP_ABI := all ，意思是编译成所有版本的so文件
+五：实现C代码中所需要的功能，同时返回 java所需要的数据类型
+jstring Java_zz_itcast_loginz19_MainActivity_encryptPwdFormC
+  (JNIEnv * env, jobject obj, jstring jstr,jint pwdLen){
+
+	 // 一：获得java 代码传递来的密码明文
+	 // 将 jstring 类型 转换为 c 语言中的字符串类型
+	 char * password = Jstring2CStr(env,jstr);
+
+	 // 二 ： 用C 代码进行加密
+	 int i;
+	 for(i=0;i<pwdLen;i++){
+
+		 char c = *(password+i); // 获得每一个字符
+
+		 char t = c+2; // 改变字符
+
+		 *(password+i) = t; // 将改变后的字符，赋值给 原有的字符串
+	 }
+
+
+	 // 三：将改变后的 password 返回到java代码中
+	 jstring jpwd = (*env)->NewStringUTF(env,password);
+
+	 return jpwd;
+};
+
+六：在java代码中加载 so 库
+static{
+				System.loadLibrary("hello_ndk"); // 库的名称就是 Android.mk 文件中 模块的名称
+			}
+
+  七：运行程序到安卓手机上面。
+  
+  
+  
+MainActivity.java的代码
+package zz.itcast.loginz19;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.Toast;
+
+public class MainActivity extends Activity {
+
+	private EditText etInputPwd;
+	private EditText etUserName;
+	
+	
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		etInputPwd = (EditText) findViewById(R.id.et_pwd);
+		etUserName = (EditText) findViewById(R.id.et_username);
+		
+	}
+	
+	public void btnClick(View view){
+		
+		String username = etUserName.getText().toString().trim();
+		String password = etInputPwd.getText().toString().trim();
+		
+		if(TextUtils.isEmpty(username) || TextUtils.isEmpty(password)){
+			Toast.makeText(this, "用户名或密码为空，请检查", 0).show();
+			return ;
+		}
+		
+		// 对密码进行加密
+		password = encryptPwdFormC(password,password.length());
+		
+		// 模拟登陆 
+		System.out.println("login:username:"+username+" pwd:"+password);
+		
+	}
+
+	/**
+	 * 由C代码实现密码加密的逻辑
+	 * @param pwd
+	 * @param pwdLen
+	 * @return
+	 */
+	public native String encryptPwdFormC(String pwd,int pwdLen);
+	
+	
+	public String encryptPwd(String pwd){
+		
+		return "abt"+pwd+"s2r2";
+	}
+	
+	static{
+		System.loadLibrary("login");
+	}
+
+}
+
+
+.c中的内容
+#include <jni.h>
+#include <stdlib.h>
+
+/**
+ * 将 java 中的字符串 转换为 C 语言中的字符串
+ */
+char*   Jstring2CStr(JNIEnv*   env,   jstring   jstr)
+{
+	 char*   rtn   =   NULL;
+	 jclass   clsstring   =   (*env)->FindClass(env,"java/lang/String");
+	 jstring   strencode   =   (*env)->NewStringUTF(env,"GB2312");
+	 jmethodID   mid   =   (*env)->GetMethodID(env,clsstring,   "getBytes",   "(Ljava/lang/String;)[B");
+	 jbyteArray   barr=   (jbyteArray)(*env)->CallObjectMethod(env,jstr,mid,strencode); // String .getByte("GB2312");
+	 jsize   alen   =   (*env)->GetArrayLength(env,barr);
+	 jbyte*   ba   =   (*env)->GetByteArrayElements(env,barr,JNI_FALSE);
+	 if(alen   >   0)
+	 {
+	  rtn   =   (char*)malloc(alen+1);         //"\0"
+	  memcpy(rtn,ba,alen);
+	  rtn[alen]=0;
+	 }
+	 (*env)->ReleaseByteArrayElements(env,barr,ba,0);  //
+	 return rtn;
+}
+
+/**
+ * 使用 javah 命令获得 与 native 方法 对应的 C 函数声明
+ *
+ * 参数：
+ * 	JNIEnv * env  JNI 运行环境，是一个指向 JNINativeInterface 的二级指针
+ *  jobject obj		调用当前C函数的 java 对象
+ *  jstring jstr	是 java代码中 encryptPwdFormC 方法 传递进来的 密码明文
+ *  jstring jstr 	密码明文的长度
+ */
+ jstring Java_zz_itcast_loginz19_MainActivity_encryptPwdFormC
+  (JNIEnv * env, jobject obj, jstring jstr,jint pwdLen){
+
+	 // 一：获得java 代码传递来的密码明文
+	 // 将 jstring 类型 转换为 c 语言中的字符串类型
+	 char * password = Jstring2CStr(env,jstr);
+
+	 // 二 ： 用C 代码进行加密
+	 int i;
+	 for(i=0;i<pwdLen;i++){
+
+		 char c = *(password+i); // 获得每一个字符
+
+		 char t = c+2; // 改变字符
+
+		 *(password+i) = t; // 将改变后的字符，赋值给 原有的字符串
+	 }
+
+
+	 // 三：将改变后的 password 返回到java代码中
+	 jstring jpwd = (*env)->NewStringUTF(env,password);
+
+	 return jpwd;
+};
