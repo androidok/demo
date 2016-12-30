@@ -1,1 +1,43 @@
+反射的其中一种
+Person.java
 
+package zz.fanshe.com;
+
+public class Person {
+
+public void eat(String name){
+	System.out.println("我正在吃"+name);
+}
+
+}
+Test.java
+
+package zz.fanshe.com;
+
+import java.lang.reflect.Method;
+
+public class Test {
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		Person  p=new Person();
+		//用反射的方法调用eat方法
+try {
+	//		1、获取字节码
+			Class   classzz=p.getClass();
+	//		2、获取想要调用的方法
+			//参数一是要调用的方法的名称，参数二及以后的参数是方法的参数的类型的的字节码
+			Method medrh=classzz.getMethod("eat", String.class);
+			//3、调用方法
+			//参数一是调用eat方法的对象，参数二及以后的参数是eat方法的真实参数
+			medrh.invoke(p, "苹果");
+} catch (Exception e) {
+	// TODO Auto-generated catch block
+	e.printStackTrace();
+}
+
+	}
+
+}
