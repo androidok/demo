@@ -173,7 +173,7 @@ public class MainActivity extends Activity {
 	};
 	
 	/**
-	 * 设置进度框显示文字
+	 * 为了给用户更好的提示，每步都做什么事情，在这里重新设置进度框显示文字
 	 * @param msg
 	 */
 	public void setProgressMsg(final String msg){
