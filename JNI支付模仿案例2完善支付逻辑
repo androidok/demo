@@ -122,12 +122,12 @@ public class MainActivity extends Activity {
 	private ProgressDialog proDlg;
 	
 	public void btnPay(View v){
-		//按钮点击之后，就让对话框显示
+		//按钮点击之后，就让对话框显示，显示提示的信息
 		proDlg.show();
 		
 		new Thread(){
 			public void run() {
-				
+			//为了调用的方便，下面的代码写在子线程，不写在子线程中也可以，因为下面的不是耗时操作
 				String username = etUsername.getText().toString().trim();
 				String password = etPassword.getText().toString().trim();
 				String moneyStr = etMoney.getText().toString().trim();
@@ -143,9 +143,10 @@ public class MainActivity extends Activity {
 					return ;
 				}
 				
-				
+				//由于调用的方法是耗时操作，所以调用的时候必须放在子线程，如果不放在子线程中，点击按钮之后会出现卡顿的情况								
+				//就是点击之后，过一段时间之后才有反应
 				int result = pay(username,password,money);
-				
+				//下面的方法中需要更新ui，所以发送消息在主线程中更新ui
 				handler.sendEmptyMessage(result);
 				
 				
@@ -179,8 +180,9 @@ public class MainActivity extends Activity {
 	 * @param msg
 	 */
 	public void showToast(final String msg){
-		
-		runOnUiThread(new Runnable() {
+				
+	//在主线程中更新ui
+	runOnUiThread(new Runnable() {
 			
 			@Override
 			public void run() {
