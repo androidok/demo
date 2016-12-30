@@ -110,13 +110,23 @@ public class MainActivity extends Activity {
 		etUsername = (EditText) findViewById(R.id.et_username);
 		etPassword = (EditText) findViewById(R.id.et_pwd);
 		etMoney = (EditText) findViewById(R.id.et_money);
+	//为了给用户更好的提示，点击按钮之后，给用户		
+	//一个对话框提示
+		proDlg = new ProgressDialog(this);
+		//设置对话框的显示内容
+		proDlg.setMessage("正在处理，请稍候...");
+		
 		
 	}
 
+	private ProgressDialog proDlg;
 	
 	public void btnPay(View v){
+		//按钮点击之后，就让对话框显示
+		proDlg.show();
 		
-		
+		new Thread(){
+			public void run() {
 				
 				String username = etUsername.getText().toString().trim();
 				String password = etPassword.getText().toString().trim();
@@ -132,9 +142,24 @@ public class MainActivity extends Activity {
 					showToast("用户名，密码，金额都不能为空");
 					return ;
 				}
-					
-     int result = pay(username,password,money);		
-     switch (result) {
+				
+				
+				int result = pay(username,password,money);
+				
+				handler.sendEmptyMessage(result);
+				
+				
+			};
+		}.start();
+		
+	}
+	private Handler handler = new Handler(){
+		public void handleMessage(android.os.Message msg) {
+		//当接受到发送过来的消息的时候，说明已经把结		
+		//果处理完毕，可以让对话框消失了
+			proDlg.dismiss();
+			
+			switch (msg.what) {
 			case 1:
 				Toast.makeText(ctx, "支付成功！", 0).show();
 				break;
@@ -145,8 +170,25 @@ public class MainActivity extends Activity {
 				Toast.makeText(ctx, "支付失败 ，金额不足！", 0).show();
 				break;
 			}
-     
-}
+		};
+	};
+	
+	
+	/**
+	 * 显示 toast 
+	 * @param msg
+	 */
+	public void showToast(final String msg){
+		
+		runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				Toast.makeText(ctx, msg, 0).show();
+			}
+		});
+		
+	}
 	
 	
 	/**
