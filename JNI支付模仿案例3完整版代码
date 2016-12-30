@@ -177,8 +177,9 @@ public class MainActivity extends Activity {
 	 * @param msg
 	 */
 	public void setProgressMsg(final String msg){
-		
-		runOnUiThread(new Runnable() {
+				
+		//该方法需要在c代码中调用，而c代码调用又是在子线程中，下面的代码是更新ui的操作所以放在主线程中
+			runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				proDlg.setMessage(msg);
