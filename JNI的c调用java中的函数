@@ -1,0 +1,25 @@
+
+/**这是c代码调用java方法的步骤由于很多的地方都需要调用java中的代码，所以抽取出来，只要在c中调用java中的方法都是下面的三个步骤
+ * 调用 MainAcivity 中的 setProgressMsg 方法 ，设置进度框的文字
+ * 参数：
+ * 	char * msg 要显示的字符串
+ *参数一 和是固定的写法：参数二参数三 调用的java方法的名称，参数四  方法的签名   参数五 要传递的参数的内容
+ */
+void CallJavaSetProgressMessage(JNIEnv *env, jobject obj,const char* jmethod, const char* signature,char * msg){
+	 // 一： 获得字节码
+		 // jclass      (*GetObjectClass)(JNIEnv*, jobject);
+		 jclass clazz = (*env)->GetObjectClass(env,obj);
+
+		 // 二： 获得方法
+		 // jmethodID   (*GetMethodID)(JNIEnv*, jclass, const char*, const char*);
+		 // 参数三是要获得的方法的名称，参数四是 要获得的方法 的签名
+		 jmethodID methodId = (*env)->GetMethodID(env,clazz,jmethod,signature);
+
+		 // 三： 调用方法
+		 //  void        (*CallVoidMethod)(JNIEnv*, jobject, jmethodID, ...);
+    //传递过来的数据要经过转化之后才可以使用，不能直接使用
+    //下面就是转化的方法
+ jstring jmessage = (*env)->NewStringUTF(env,msg);
+		 (*env)->CallVoidMethod(env,obj,methodId,jmessage);
+
+}
