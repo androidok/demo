@@ -398,3 +398,5 @@ void CallJavaSetProgressMessage(JNIEnv *env, jobject obj,char * msg){
         />
     
 </LinearLayout>
+
+//这就是通过jni实现支付实例的一个简单的完整版案例
