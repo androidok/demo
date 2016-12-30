@@ -279,7 +279,7 @@ char*   Jstring2CStr(JNIEnv*   env,   jstring   jstr)
 }
 
 
-/**
+/**这是c代码调用java方法的步骤由于很多的地方都需要调用java中的代码，所以抽取出来，只要在c中调用java中的方法都是下面的三个步骤
  * 调用 MainAcivity 中的 setProgressMsg 方法 ，设置进度框的文字
  * 参数：
  * 	char * msg 要显示的字符串
@@ -320,18 +320,17 @@ void CallJavaSetProgressMessage(JNIEnv *env, jobject obj,char * msg){
  jint Java_zz_itcast_payz19_MainActivity_pay
   (JNIEnv *env, jobject obj, jstring jusername, jstring jpassword, jint money){
 
-
-
-	 CallJavaSetProgressMessage(env,obj,"对密码加密");
+	//调用java中的代码
+	CallJavaSetProgressMessage(env,obj,"对密码加密");
 	 // 对密码加密
 	 sleep(2); //  休眠2秒
 	 LOGD("对密码加密");
-
+	//调用java中的代码
 	 CallJavaSetProgressMessage(env,obj,"联网支付");
 	 // 联网支付
 	 sleep(2); //  休眠2秒
 	 LOGD("联网支付");
-
+	//调用java中的代码
 	 CallJavaSetProgressMessage(env,obj,"检查支付结果");
 	 // 检查支付结果
 	 sleep(2); //  休眠2秒
