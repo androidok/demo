@@ -23,3 +23,10 @@ void CallJavaSetProgressMessage(JNIEnv *env, jobject obj,const char* jmethod, co
 		 (*env)->CallVoidMethod(env,obj,methodId,jmessage);
 
 }
+*********************************************************************************
+对java中的函数进行签名
+C函数调用java函数的时候需要一个方法的签名，方法的签名需要使用javap命令
+步骤：
+打开项目中的bin目录—打开classes目录—打开cmd窗口（shift+鼠标右键--在此处打开命令窗体）--执行命令 javap -s 类的全限定名
+
+ bin\classes>javap -s zz.itcast.payz19.MainActivity
