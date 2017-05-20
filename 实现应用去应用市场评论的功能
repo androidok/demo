@@ -1,0 +1,36 @@
+private void markMomo() {
+//		陌陌详情界面的url
+		String str = "market://details?id=com.immomo.momo";//com.immomo.momo代表的应用的包名.getPackageName()
+    //实际的意思就是Uri uri = Uri.parse("market://details?id="+getPackageName());
+		try {
+			Intent intent = new Intent(Intent.ACTION_VIEW);
+			intent.setData(Uri.parse(str));
+			startActivity(intent);
+		} catch (Exception e) {
+			showCustomToast("找不到应用市场,无法对应用评分");
+		}
+	}
+	
+	public void onClick(View v) {
+        	markMomo();
+     }
+     
+	/** 显示自定义Toast提示(来自String) **/
+	protected void showCustomToast(String text) {
+	View toastRoot = LayoutInflater.from(上下文).inflate(
+				R.layout.common_toast, null);//R.layout.common_toast代表的是自定义toast的布局
+		((HandyTextView) toastRoot.findViewById(R.id.toast_text)).setText(text);
+	Toast toast = new Toast(BaseActivity.this);
+		/*自定义位置
+		//第一个参数：设置toast在屏幕中显示的位置。我现在的设置是居中靠顶 
+//第二个参数：相对于第一个参数设置toast位置的横向X轴的偏移量，正数向右偏移，负数向左偏移 
+//第三个参数：同的第二个参数道理一样 
+		*/
+		
+		toast.setGravity(Gravity.CENTER, 0, 0);
+		//设置显示的时长
+		toast.setDuration(Toast.LENGTH_SHORT);
+		//显示的布局
+		toast.setView(toastRoot);
+		toast.show();
+	}
