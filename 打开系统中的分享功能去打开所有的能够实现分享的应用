@@ -1,0 +1,9 @@
+Intent sendIntent = new Intent();  
+sendIntent.setAction(Intent.ACTION_SEND);  
+sendIntent.setType("text/*");  
+sendIntent.putExtra(Intent.EXTRA_TEXT, contentEditText.getText().toString());  
+startActivity(sendIntent); 
+
+
+
+通过上述的代码我们可以实现安卓手机上所有可以实现分享功能的应用
